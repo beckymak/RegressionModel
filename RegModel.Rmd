@@ -1,0 +1,72 @@
+---
+title: "Automatic or Manual cars? "
+author: "Becky"
+date: "Saturday, July 26, 2014"
+output: pdf_document
+---
+
+##Executive Summary
+To understand the relationship between Miles per gallon (mpg) and Transmission, data of 32 car models are investigated. A regression model are thus developed. From the model, we can see the transmission has large effect on `mpg`. And as the coeffecient of the transmission large and negative, it indicates that manual cars can much lower the miles per gallon. And since the interactin of transmission with most of the other variables also have negative coeffcients in the model, the manual cars have less mile per gallon. 
+
+---
+
+##Synopsis
+To understand the relationship between a set of variables and miles pre gallon (MPG), the data `mtcars` is used which is extracted from _Motor Trend_ US magazine in 1974. The [data](http://stat.ethz.ch/R-manual/R-devel/library/datasets/html/mtcars.html) comprises fuel consumption and 10 aspects of automobile design and performance for 32 automobiles.
+In this report, we will particularly look at automatic or manual transmission is better for MPG, and quantify the MPG difference between them.
+
+##Exploratory Analysis
+```{r, fig.width = 7, fig.height = 2.5}
+data(mtcars)  #Load the data
+#Preprocess the data
+mtcars$am = factor(mtcars$am, levels=c(0,1), labels=c("automatic","manual"))
+m=aggregate(mpg~am, data=mtcars, FUN=mean)  #mean
+
+library(ggplot2)  #plot 
+qplot(,mpg, data=mtcars,color=am, 
+      xlab="Cars", ylab="Mile per Gallon (MPG)",
+      main="MPG of different fuel consumption")+scale_colour_discrete(name="Transmission")
+```
+
+The mean mpg of __automatic__ model is `r m[1,2]` and that for the __manual__ model is `r m[2,2]`. From the plot, we can notice that the manual model has higher mpg that that of the automatic model in general.
+
+##Regression Model
+###Model building
+We first used the full dataset to build the model, and determine the importance of each variable by its p-value.
+```{r, results='hide'}
+modelFull=lm(mpg~(.)*am, data=mtcars); summary(modelFull)
+```
+
+From the result, the p-value of each variable is high enough indicates we may undergo the model selection process for selecting important variables. _Summary of the model is shown in the appendix._
+
+###Model selection
+To find the best fit model, we then used the stepwise method to find a model with least AIC. The stepwise method will calculate the AIC for different combinations of variables and choose the model with least AIC. That is, the model with largest maximum likelihood and apporiate number of variables. 
+```{r, results='hide'}
+modelStep=step(modelFull, direction="both"); summary(modelStep)
+```
+
+The fitted model includes variables __displacement__, __Gross horsepower__, __Real axle ratio__, __weight__, __1/4 mile time__, __transmission__, __Number of forward gears__, and __Number of carburetors__ to predict the __mpg__. _Summary of the model is shown in the appendix._
+
+###Model Diagnostics
+```{r, fig.width = 7, fig.height = 2.5}
+r= resid(modelStep)
+par(mfrow=c(1,2)) 
+plot(r, main="Residual plot", ylab="Residuals"); abline(h=0, col=4) #Residual plot
+qqnorm(r); qqline(r,col=2)  #Normal-QQ plot
+```
+
+The plots indicates the resdiuals are around zero and scattered. The Normal QQ plot shows the model fit the normal distribution assumption.
+
+
+\pagebreak
+
+##Appendix
+###Summary of the full model
+```{r}
+summary(modelFull)
+```
+\pagebreak
+
+###Summary of the fitted model
+```{r}
+summary(modelStep)
+```
